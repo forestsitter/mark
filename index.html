@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a1a1a">
+<meta name="description" content="Mark — your personal bookmark manager">
+<title>Mark</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1a1a;
+    --ink-2: #555;
+    --ink-3: #999;
+    --paper: #faf9f6;
+    --paper-2: #f0ede7;
+    --paper-3: #e5e1d9;
+    --accent: #c8502a;
+    --accent-2: #f0e8e2;
+    --green: #2d6a4f;
+    --green-bg: #e8f4ed;
+    --border: rgba(26,26,26,0.1);
+    --border-strong: rgba(26,26,26,0.2);
+    --sans: 'DM Sans', system-ui, sans-serif;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --mono: 'DM Mono', monospace;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+    --shadow-hover: 0 2px 8px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.08);
+    --transition: 180ms ease;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Layout ── */
+  .app { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 240px;
+    min-width: 240px;
+    background: var(--paper-2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+  .topbar {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--paper);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .content { padding: 24px; flex: 1; }
+
+  /* ── Brand ── */
+  .brand {
+    padding: 20px 20px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-icon {
+    width: 32px; height: 32px;
+    background: var(--ink);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand-icon svg { width: 18px; height: 18px; fill: var(--paper); }
+  .brand-name { font-family: var(--serif); font-size: 20px; color: var(--ink); letter-spacing: -0.3px; }
+
+  /* ── Search ── */
+  .search-wrap { padding: 4px 12px 12px; }
+  .search-box {
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: var(--sans);
+    color: var(--ink);
+    outline: none;
+    transition: border-color var(--transition);
+    position: relative;
+  }
+  .search-box:focus { border-color: var(--border-strong); }
+  .search-wrap-inner { position: relative; }
+  .search-icon {
+    position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-3);
+    pointer-events: none;
+  }
+
+  /* ── Nav ── */
+  .nav-section { padding: 0 8px 8px; }
+  .nav-label { font-size: 10px; font-weight: 500; color: var(--ink-3); letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 12px 4px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 12px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--ink-2);
+    transition: background var(--transition), color var(--transition);
+    user-select: none;
+    border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: var(--paper-3); color: var(--ink); }
+  .nav-item.active { background: var(--ink); color: var(--paper); }
+  .nav-item .count {
+    margin-left: auto;
+    font-size: 11px;
+    background: var(--paper-3);
+    color: var(--ink-3);
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-family: var(--mono);
+  }
+  .nav-item.active .count { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); }
+
+  /* ── Tags in sidebar ── */
+  .tag-list { display: flex; flex-direction: column; gap: 1px; }
+  .tag-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Add button ── */
+  .add-btn {
+    margin: 8px 12px 16px;
+    padding: 9px 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--sans);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: opacity var(--transition), transform var(--transition);
+    width: calc(100% - 24px);
+    justify-content: center;
+  }
+  .add-btn:hover { opacity: 0.88; }
+  .add-btn:active { transform: scale(0.98); }
+
+  /* ── Topbar search ── */
+  .topbar-search {
+    flex: 1;
+    padding: 8px 14px;
+    background: var(--paper-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: var(--sans);
+    color: var(--ink);
+    outline: none;
+    transition: border-color var(--transition);
+  }
+  .topbar-search:focus { border-color: var(--border-strong); background: var(--paper); }
+
+  .view-toggle {
+    display: flex; gap: 2px;
+    background: var(--paper-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .view-btn {
+    padding: 5px 8px;
+    border: none;
+    background: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--ink-3);
+    transition: background var(--transition), color var(--transition);
+    line-height: 1;
+  }
+  .view-btn.active { background: var(--paper); color: var(--ink); }
+
+  .sort-select {
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: var(--sans);
+    color: var(--ink-2);
+    background: var(--paper);
+    outline: none;
+    cursor: pointer;
+  }
+
+  /* ── Bookmark cards ── */
+  .bookmarks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .bookmarks-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: var(--shadow-hover); border-color: var(--border-strong); transform: translateY(-1px); }
+
+  .card-list {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+  }
+
+  .card-favicon {
+    width: 24px; height: 24px;
+    border-radius: 5px;
+    object-fit: contain;
+    flex-shrink: 0;
+    background: var(--paper-2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+  }
+  .card-favicon img { width: 100%; height: 100%; border-radius: 5px; object-fit: contain; }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-url {
+    font-size: 12px;
+    color: var(--ink-3);
+    font-family: var(--mono);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-excerpt {
+    font-size: 13px;
+    color: var(--ink-2);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: auto;
+  }
+
+  .tag-chip {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--paper-2);
+    color: var(--ink-2);
+    cursor: pointer;
+    transition: background var(--transition);
+    border: none;
+    font-family: var(--sans);
+  }
+  .tag-chip:hover { background: var(--paper-3); }
+  .tag-chip.colored { color: white; }
+
+  .card-date { font-size: 11px; color: var(--ink-3); margin-left: auto; font-family: var(--mono); }
+
+  .card-actions {
+    position: absolute;
+    top: 10px; right: 10px;
+    display: flex; gap: 4px;
+    opacity: 0;
+    transition: opacity var(--transition);
+  }
+  .card:hover .card-actions { opacity: 1; }
+  .card-list:hover .card-actions { opacity: 1; }
+
+  .card-action-btn {
+    width: 28px; height: 28px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--paper);
+    color: var(--ink-2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    transition: background var(--transition), color var(--transition);
+  }
+  .card-action-btn:hover { background: var(--paper-2); }
+  .card-action-btn.delete:hover { background: #fef0f0; color: #c0392b; border-color: #f5c6c6; }
+
+  .card-list .card-info { flex: 1; min-width: 0; }
+
+  /* ── Empty state ── */
+  .empty-state {
+    text-align: center;
+    padding: 80px 24px;
+    color: var(--ink-3);
+  }
+  .empty-state .empty-icon { font-size: 40px; margin-bottom: 16px; opacity: 0.4; }
+  .empty-state h3 { font-family: var(--serif); font-size: 20px; color: var(--ink-2); margin-bottom: 8px; font-weight: 400; }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  /* ── Modal ── */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(10,10,10,0.4);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    opacity: 0;
+    animation: fadeIn 150ms ease forwards;
+  }
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  .modal {
+    background: var(--paper);
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    width: 100%; max-width: 520px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    transform: translateY(8px);
+    animation: slideUp 180ms ease forwards;
+  }
+  @keyframes slideUp { to { transform: translateY(0); } }
+
+  .modal-header {
+    padding: 20px 20px 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-title { font-family: var(--serif); font-size: 20px; font-weight: 400; }
+  .modal-close {
+    width: 32px; height: 32px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--ink-3);
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--transition);
+  }
+  .modal-close:hover { background: var(--paper-2); }
+
+  .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+
+  .field-label {
+    font-size: 12px; font-weight: 500;
+    color: var(--ink-3); letter-spacing: 0.04em;
+    margin-bottom: 5px; display: block;
+    text-transform: uppercase;
+  }
+  .field-input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--paper);
+    outline: none;
+    transition: border-color var(--transition);
+  }
+  .field-input:focus { border-color: var(--ink); }
+  textarea.field-input { resize: vertical; min-height: 72px; line-height: 1.5; }
+
+  .tags-input-wrap {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 8px;
+    display: flex; flex-wrap: wrap; gap: 5px;
+    cursor: text;
+    transition: border-color var(--transition);
+    background: var(--paper);
+  }
+  .tags-input-wrap:focus-within { border-color: var(--ink); }
+  .tag-input-field {
+    border: none; outline: none; font-size: 14px;
+    font-family: var(--sans); color: var(--ink);
+    background: transparent; flex: 1; min-width: 80px;
+    padding: 3px 4px;
+  }
+  .tag-bubble {
+    display: flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 20px;
+    background: var(--paper-3); font-size: 12px;
+  }
+  .tag-bubble button {
+    border: none; background: none; cursor: pointer;
+    color: var(--ink-3); font-size: 14px; line-height: 1;
+    padding: 0; display: flex; align-items: center;
+  }
+
+  .modal-footer {
+    padding: 0 20px 20px;
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: var(--sans);
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--paper-2);
+    color: var(--ink-2);
+    transition: background var(--transition), transform var(--transition);
+  }
+  .btn:hover { background: var(--paper-3); }
+  .btn-primary {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn:active { transform: scale(0.98); }
+
+  /* ── Section heading ── */
+  .section-header {
+    display: flex; align-items: baseline; gap: 10px;
+    margin-bottom: 20px;
+  }
+  .section-title { font-family: var(--serif); font-size: 24px; font-weight: 400; }
+  .section-count { font-size: 13px; color: var(--ink-3); font-family: var(--mono); }
+
+  /* ── Starred indicator ── */
+  .starred-dot {
+    position: absolute; top: 12px; left: 12px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--ink);
+    color: var(--paper);
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    z-index: 200;
+    animation: toastIn 200ms ease forwards;
+    white-space: nowrap;
+  }
+  @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+  /* ── Bookmarklet info ── */
+  .bookmarklet-strip {
+    background: var(--green-bg);
+    border: 1px solid rgba(45,106,79,0.2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex; align-items: flex-start; gap: 12px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    color: var(--green);
+    line-height: 1.5;
+  }
+  .bookmarklet-strip svg { margin-top: 1px; flex-shrink: 0; }
+  .bookmarklet-link {
+    display: inline-block;
+    background: var(--green);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: grab;
+    text-decoration: none;
+    margin-left: 8px;
+    user-select: none;
+  }
+
+  /* ── Color dots for tags ── */
+  .color-picker { display: flex; gap: 6px; margin-top: 6px; }
+  .color-swatch {
+    width: 22px; height: 22px; border-radius: 50%;
+    cursor: pointer; border: 2px solid transparent;
+    transition: transform var(--transition), border-color var(--transition);
+  }
+  .color-swatch:hover, .color-swatch.active { transform: scale(1.15); border-color: var(--ink); }
+
+  /* ── Responsive ── */
+  @media (max-width: 700px) {
+    .sidebar { display: none; }
+    .bookmarks-grid { grid-template-columns: 1fr; }
+  }
+
+  .highlight { background: rgba(200, 80, 42, 0.15); border-radius: 3px; padding: 0 2px; }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17 3H7C5.9 3 5 3.9 5 5v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+        </svg>
+      </div>
+      <span class="brand-name">Mark</span>
+    </div>
+
+    <button class="add-btn" onclick="openAddModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Bookmark
+    </button>
+
+    <div class="search-wrap">
+      <div class="search-wrap-inner">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search-box" type="text" placeholder="Search…" id="sidebarSearch" oninput="handleSearch(this.value)">
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Library</div>
+      <button class="nav-item active" onclick="setFilter('all', this)" data-filter="all">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        All Bookmarks
+        <span class="count" id="count-all">0</span>
+      </button>
+      <button class="nav-item" onclick="setFilter('starred', this)" data-filter="starred">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Starred
+        <span class="count" id="count-starred">0</span>
+      </button>
+      <button class="nav-item" onclick="setFilter('unread', this)" data-filter="unread">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Unread
+        <span class="count" id="count-unread">0</span>
+      </button>
+    </div>
+
+    <div class="nav-section" id="tags-nav">
+      <div class="nav-label">Tags</div>
+      <div class="tag-list" id="tag-nav-list"></div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <input class="topbar-search" type="text" id="topSearch" placeholder="Search bookmarks, tags, notes…" oninput="handleSearch(this.value)">
+      <select class="sort-select" onchange="handleSort(this.value)">
+        <option value="date-desc">Newest first</option>
+        <option value="date-asc">Oldest first</option>
+        <option value="title-asc">Title A–Z</option>
+      </select>
+      <div class="view-toggle">
+        <button class="view-btn active" id="grid-btn" onclick="setView('grid')" title="Grid view">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+        </button>
+        <button class="view-btn" id="list-btn" onclick="setView('list')" title="List view">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="content" id="content">
+      <!-- Dynamic content rendered here -->
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<template id="modal-tpl">
+<div class="modal-backdrop" id="modal-backdrop" onclick="handleBackdropClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title-text">Add Bookmark</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <label class="field-label">URL</label>
+        <input class="field-input" type="url" id="field-url" placeholder="https://…">
+      </div>
+      <div>
+        <label class="field-label">Title</label>
+        <input class="field-input" type="text" id="field-title" placeholder="Page title">
+      </div>
+      <div>
+        <label class="field-label">Notes</label>
+        <textarea class="field-input" id="field-notes" placeholder="What's this about?"></textarea>
+      </div>
+      <div>
+        <label class="field-label">Tags <span style="font-weight:400;text-transform:none;letter-spacing:0">— press Enter or comma to add</span></label>
+        <div class="tags-input-wrap" id="tags-wrap" onclick="document.getElementById('tag-field').focus()">
+          <input class="tag-input-field" id="tag-field" type="text" placeholder="Add tags…">
+        </div>
+      </div>
+      <div style="display:flex;gap:20px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="field-starred"> Starred
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="field-unread" checked> Mark as unread
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBookmark()">Save</button>
+    </div>
+  </div>
+</div>
+</template>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'mark_bookmarks_v1';
+
+let state = {
+  bookmarks: [],
+  filter: 'all',      // 'all' | 'starred' | 'unread' | tag string
+  search: '',
+  view: 'grid',       // 'grid' | 'list'
+  sort: 'date-desc',
+  editingId: null,
+  modalTags: [],
+};
+
+const TAG_COLORS = [
+  '#c8502a','#2d6a4f','#2563eb','#7c3aed','#b45309','#0891b2','#be123c',
+];
+
+function getTagColor(tag) {
+  let hash = 0;
+  for (let c of tag) hash = (hash * 31 + c.charCodeAt(0)) & 0xffffffff;
+  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
+}
+
+// ── Persistence ────────────────────────────────────────────────────────────
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) state.bookmarks = JSON.parse(raw);
+  } catch(_) {}
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.bookmarks));
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function getDomain(url) {
+  try { return new URL(url).hostname.replace('www.', ''); } catch { return url; }
+}
+
+function getFavicon(url) {
+  try {
+    const domain = new URL(url).origin;
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+  } catch { return null; }
+}
+
+function formatDate(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const diff = now - d;
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+  if (diff < 604800000) return Math.floor(diff/86400000) + 'd ago';
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+function highlight(text, query) {
+  if (!query || !text) return text || '';
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(new RegExp(escaped, 'gi'), m => `<span class="highlight">${m}</span>`);
+}
+
+// ── Filtering & sorting ────────────────────────────────────────────────────
+function getFiltered() {
+  let list = [...state.bookmarks];
+  const q = state.search.toLowerCase().trim();
+
+  if (q) {
+    list = list.filter(b =>
+      b.title?.toLowerCase().includes(q) ||
+      b.url?.toLowerCase().includes(q) ||
+      b.notes?.toLowerCase().includes(q) ||
+      b.tags?.some(t => t.toLowerCase().includes(q))
+    );
+  }
+
+  if (state.filter === 'starred') list = list.filter(b => b.starred);
+  else if (state.filter === 'unread') list = list.filter(b => b.unread);
+  else if (state.filter !== 'all') list = list.filter(b => b.tags?.includes(state.filter));
+
+  list.sort((a, b) => {
+    if (state.sort === 'date-desc') return b.createdAt - a.createdAt;
+    if (state.sort === 'date-asc') return a.createdAt - b.createdAt;
+    return (a.title || '').localeCompare(b.title || '');
+  });
+
+  return list;
+}
+
+function getAllTags() {
+  const map = {};
+  state.bookmarks.forEach(b => b.tags?.forEach(t => { map[t] = (map[t] || 0) + 1; }));
+  return Object.entries(map).sort((a,b) => b[1]-a[1]);
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function render() {
+  updateCounts();
+  renderTagNav();
+  renderBookmarks();
+}
+
+function updateCounts() {
+  document.getElementById('count-all').textContent = state.bookmarks.length;
+  document.getElementById('count-starred').textContent = state.bookmarks.filter(b=>b.starred).length;
+  document.getElementById('count-unread').textContent = state.bookmarks.filter(b=>b.unread).length;
+}
+
+function renderTagNav() {
+  const tags = getAllTags();
+  const list = document.getElementById('tag-nav-list');
+  list.innerHTML = tags.map(([tag, count]) => `
+    <button class="nav-item ${state.filter === tag ? 'active' : ''}" onclick="setFilter('${escAttr(tag)}', this)" data-filter="${escAttr(tag)}">
+      <span class="tag-dot" style="background:${getTagColor(tag)}"></span>
+      ${esc(tag)}
+      <span class="count">${count}</span>
+    </button>
+  `).join('');
+}
+
+function renderBookmarks() {
+  const content = document.getElementById('content');
+  const list = getFiltered();
+  const q = state.search.trim();
+
+  // Section header
+  let title = state.filter === 'all' ? 'All Bookmarks'
+    : state.filter === 'starred' ? 'Starred'
+    : state.filter === 'unread' ? 'Unread'
+    : `#${state.filter}`;
+
+  let html = `
+    <div class="bookmarklet-strip">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div>
+        <strong>Bookmarklet:</strong> Drag this to your bookmarks bar to save pages instantly:
+        <a class="bookmarklet-link" href="javascript:(function(){var d=document,t=d.title,u=d.URL;window.open('${window.location.href.split('?')[0]}?add=1&url='+encodeURIComponent(u)+'&title='+encodeURIComponent(t),'_blank');})();" draggable="true" onclick="return false">+ Mark it</a>
+      </div>
+    </div>
+    <div class="section-header">
+      <h1 class="section-title">${esc(title)}</h1>
+      <span class="section-count">${list.length} bookmark${list.length !== 1 ? 's' : ''}</span>
+    </div>
+  `;
+
+  if (list.length === 0) {
+    html += `<div class="empty-state">
+      <div class="empty-icon">◉</div>
+      <h3>${q ? 'No results found' : 'Nothing here yet'}</h3>
+      <p>${q ? `No bookmarks match "<em>${esc(q)}</em>"` : 'Add your first bookmark with the button above.'}</p>
+    </div>`;
+  } else {
+    const cls = state.view === 'grid' ? 'bookmarks-grid' : 'bookmarks-list';
+    html += `<div class="${cls}">` + list.map(b => renderCard(b, q)).join('') + '</div>';
+  }
+
+  content.innerHTML = html;
+}
+
+function renderCard(b, q='') {
+  const favicon = getFavicon(b.url);
+  const domain = getDomain(b.url);
+  const isList = state.view === 'list';
+
+  const faviconHtml = favicon
+    ? `<div class="card-favicon"><img src="${escAttr(favicon)}" alt="" onerror="this.parentElement.textContent='🔗'"></div>`
+    : `<div class="card-favicon">🔗</div>`;
+
+  const tagsHtml = (b.tags || []).map(t =>
+    `<span class="tag-chip" onclick="setFilter('${escAttr(t)}',null)" style="background:${getTagColor(t)}22;color:${getTagColor(t)}">#${esc(t)}</span>`
+  ).join('');
+
+  const starBtn = `<button class="card-action-btn" onclick="toggleStar('${b.id}')" title="${b.starred ? 'Unstar' : 'Star'}">${b.starred ? '★' : '☆'}</button>`;
+  const editBtn = `<button class="card-action-btn" onclick="openEditModal('${b.id}')" title="Edit">✎</button>`;
+  const deleteBtn = `<button class="card-action-btn delete" onclick="deleteBookmark('${b.id}')" title="Delete">×</button>`;
+  const openBtn = `<button class="card-action-btn" onclick="openUrl('${escAttr(b.url)}')" title="Open">↗</button>`;
+
+  if (isList) {
+    return `<div class="card card-list" onclick="markRead('${b.id}')">
+      ${b.starred ? '<div class="starred-dot"></div>' : ''}
+      ${faviconHtml}
+      <div class="card-info">
+        <div class="card-title" style="${b.unread ? 'font-weight:500' : ''}">${highlight(esc(b.title || domain), q)}</div>
+        <div class="card-url">${esc(domain)}</div>
+      </div>
+      <div class="card-meta" style="flex-shrink:0">${tagsHtml}</div>
+      <span class="card-date" style="flex-shrink:0">${formatDate(b.createdAt)}</span>
+      <div class="card-actions">${openBtn}${starBtn}${editBtn}${deleteBtn}</div>
+    </div>`;
+  }
+
+  return `<div class="card" onclick="markRead('${b.id}')">
+    ${b.starred ? '<div class="starred-dot"></div>' : ''}
+    <div style="display:flex;align-items:center;gap:8px">
+      ${faviconHtml}
+      <div style="min-width:0">
+        <div class="card-url">${esc(domain)}</div>
+      </div>
+    </div>
+    <div class="card-title" style="${b.unread ? 'font-weight:600' : ''}">${highlight(esc(b.title || domain), q)}</div>
+    ${b.notes ? `<div class="card-excerpt">${highlight(esc(b.notes), q)}</div>` : ''}
+    <div class="card-meta">
+      ${tagsHtml}
+      <span class="card-date">${formatDate(b.createdAt)}</span>
+    </div>
+    <div class="card-actions">${openBtn}${starBtn}${editBtn}${deleteBtn}</div>
+  </div>`;
+}
+
+// ── Actions ────────────────────────────────────────────────────────────────
+function setFilter(f, el) {
+  state.filter = f;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  else {
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.dataset.filter === f) n.classList.add('active');
+    });
+  }
+  render();
+}
+
+function handleSearch(val) {
+  state.search = val;
+  document.getElementById('topSearch').value = val;
+  document.getElementById('sidebarSearch').value = val;
+  renderBookmarks();
+}
+
+function handleSort(val) { state.sort = val; renderBookmarks(); }
+
+function setView(v) {
+  state.view = v;
+  document.getElementById('grid-btn').classList.toggle('active', v === 'grid');
+  document.getElementById('list-btn').classList.toggle('active', v === 'list');
+  renderBookmarks();
+}
+
+function toggleStar(id) {
+  const b = state.bookmarks.find(x => x.id === id);
+  if (b) { b.starred = !b.starred; save(); render(); }
+}
+
+function markRead(id) {
+  const b = state.bookmarks.find(x => x.id === id);
+  if (b && b.unread) { b.unread = false; save(); }
+}
+
+function deleteBookmark(id) {
+  if (!confirm('Delete this bookmark?')) return;
+  state.bookmarks = state.bookmarks.filter(x => x.id !== id);
+  save(); render();
+  toast('Bookmark deleted');
+}
+
+function openUrl(url) {
+  window.open(url, '_blank', 'noopener');
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────────
+function openAddModal(prefillUrl='', prefillTitle='') {
+  state.editingId = null;
+  state.modalTags = [];
+  const tpl = document.getElementById('modal-tpl').content.cloneNode(true);
+  document.body.appendChild(tpl);
+  document.getElementById('modal-title-text').textContent = 'Add Bookmark';
+  document.getElementById('field-url').value = prefillUrl;
+  document.getElementById('field-title').value = prefillTitle;
+  setupTagInput();
+  document.getElementById('field-url').focus();
+}
+
+function openEditModal(id) {
+  const b = state.bookmarks.find(x => x.id === id);
+  if (!b) return;
+  state.editingId = id;
+  state.modalTags = [...(b.tags || [])];
+  const tpl = document.getElementById('modal-tpl').content.cloneNode(true);
+  document.body.appendChild(tpl);
+  document.getElementById('modal-title-text').textContent = 'Edit Bookmark';
+  document.getElementById('field-url').value = b.url || '';
+  document.getElementById('field-title').value = b.title || '';
+  document.getElementById('field-notes').value = b.notes || '';
+  document.getElementById('field-starred').checked = !!b.starred;
+  document.getElementById('field-unread').checked = !!b.unread;
+  setupTagInput();
+  document.getElementById('field-title').focus();
+}
+
+function setupTagInput() {
+  renderTagBubbles();
+  const field = document.getElementById('tag-field');
+  field.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const val = field.value.trim().replace(/,/g,'');
+      if (val && !state.modalTags.includes(val)) {
+        state.modalTags.push(val);
+        renderTagBubbles();
+      }
+      field.value = '';
+    } else if (e.key === 'Backspace' && !field.value && state.modalTags.length) {
+      state.modalTags.pop();
+      renderTagBubbles();
+    }
+  });
+}
+
+function renderTagBubbles() {
+  const wrap = document.getElementById('tags-wrap');
+  const field = document.getElementById('tag-field');
+  wrap.querySelectorAll('.tag-bubble').forEach(el => el.remove());
+  state.modalTags.forEach((tag, i) => {
+    const bubble = document.createElement('span');
+    bubble.className = 'tag-bubble';
+    bubble.innerHTML = `${esc(tag)} <button onclick="removeModalTag(${i})">×</button>`;
+    wrap.insertBefore(bubble, field);
+  });
+}
+
+function removeModalTag(i) {
+  state.modalTags.splice(i, 1);
+  renderTagBubbles();
+}
+
+function saveBookmark() {
+  const url = document.getElementById('field-url').value.trim();
+  const title = document.getElementById('field-title').value.trim();
+  const notes = document.getElementById('field-notes').value.trim();
+  const starred = document.getElementById('field-starred').checked;
+  const unread = document.getElementById('field-unread').checked;
+  const tagField = document.getElementById('tag-field').value.trim();
+  if (tagField && !state.modalTags.includes(tagField)) state.modalTags.push(tagField);
+
+  if (!url) { document.getElementById('field-url').focus(); return; }
+
+  if (state.editingId) {
+    const b = state.bookmarks.find(x => x.id === state.editingId);
+    if (b) Object.assign(b, { url, title: title || getDomain(url), notes, tags: state.modalTags, starred, unread });
+  } else {
+    state.bookmarks.unshift({
+      id: uid(), url, title: title || getDomain(url), notes,
+      tags: state.modalTags, starred, unread,
+      createdAt: Date.now(),
+    });
+  }
+
+  save(); closeModal(); render();
+  toast(state.editingId ? 'Bookmark updated' : 'Bookmark saved!');
+}
+
+function closeModal() {
+  const modal = document.getElementById('modal-backdrop');
+  if (modal) modal.remove();
+  state.editingId = null;
+  state.modalTags = [];
+}
+
+function handleBackdropClick(e) {
+  if (e.target === e.currentTarget) closeModal();
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 200ms'; setTimeout(() => el.remove(), 200); }, 2200);
+}
+
+// ── Keyboard ───────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); document.getElementById('topSearch').focus(); }
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'n' && !e.target.matches('input,textarea')) openAddModal();
+});
+
+// ── Security helpers ────────────────────────────────────────────────────────
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(str) { return esc(str).replace(/'/g,'&#39;'); }
+
+// ── Bookmarklet URL parameter handling ─────────────────────────────────────
+function checkUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('add')) {
+    const url = params.get('url') || '';
+    const title = params.get('title') || '';
+    history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => openAddModal(url, title), 200);
+  }
+}
+
+// ── Import / Export ────────────────────────────────────────────────────────
+function exportBookmarks() {
+  const blob = new Blob([JSON.stringify(state.bookmarks, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'mark-bookmarks.json';
+  a.click();
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+load();
+checkUrlParams();
+
+// Seed demo data if empty
+if (state.bookmarks.length === 0) {
+  const demos = [
+    { url:'https://news.ycombinator.com', title:'Hacker News', notes:'Tech news and discussion', tags:['tech','reading'], starred:true, unread:false },
+    { url:'https://simonwillison.net', title:'Simon Willison\'s Weblog', notes:'Thoughtful AI and web dev writing', tags:['ai','tech'], starred:false, unread:true },
+    { url:'https://aeon.co', title:'Aeon Magazine', notes:'Long-form philosophy, science, culture', tags:['reading','philosophy'], starred:true, unread:false },
+    { url:'https://dhammatalks.org', title:'DhammaTalks', notes:'Thanissaro Bhikkhu teachings and suttas', tags:['dharma','reading'], starred:true, unread:false },
+    { url:'https://github.com', title:'GitHub', notes:'Code hosting', tags:['dev'], starred:false, unread:false },
+  ];
+  demos.forEach((d, i) => state.bookmarks.push({ id: uid(), createdAt: Date.now() - i * 86400000 * 3, unread: d.unread ?? true, ...d }));
+  save();
+}
+
+render();
+</script>
+
+<!-- Service Worker registration for PWA -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>

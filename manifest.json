@@ -1,0 +1,16 @@
+{
+  "name": "Mark — Bookmark Manager",
+  "short_name": "Mark",
+  "description": "Your personal bookmark manager",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf9f6",
+  "theme_color": "#1a1a1a",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='36' fill='%231a1a1a'/><path d='M56 40h80a16 16 0 0 1 16 16v100l-56-24-56 24V56A16 16 0 0 1 56 40z' fill='%23faf9f6'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
