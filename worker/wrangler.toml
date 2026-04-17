@@ -1,0 +1,13 @@
+name = "mark-bookmarks"
+main = "index.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# KV namespace — run `npx wrangler kv namespace create BOOKMARKS` then paste the id below
+[[kv_namespaces]]
+binding = "BOOKMARKS"
+id = "PASTE_YOUR_KV_ID_HERE"
+
+# Email trigger — routes email sent to your capture address into handleEmail()
+[[send_email]]
+name = "mark-capture"

@@ -532,6 +532,74 @@
   }
 
   .highlight { background: rgba(200, 80, 42, 0.15); border-radius: 3px; padding: 0 2px; }
+
+  /* ── Sync status ── */
+  .sync-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; color: var(--ink-3); font-family: var(--mono);
+    padding: 4px 10px; border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--paper-2);
+    cursor: pointer;
+    transition: background var(--transition);
+    white-space: nowrap;
+  }
+  .sync-pill:hover { background: var(--paper-3); }
+  .sync-pill.syncing { color: var(--accent); border-color: var(--accent); animation: pulse 1.2s infinite; }
+  .sync-pill.synced  { color: var(--green);  border-color: rgba(45,106,79,0.3); }
+  .sync-pill.error   { color: #c0392b; border-color: #f5c6c6; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+  /* ── Settings modal ── */
+  .settings-section { border-top: 1px solid var(--border); padding: 12px 16px; margin-top: auto; }
+  .settings-link {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--ink-3);
+    cursor: pointer; background: none; border: none;
+    font-family: var(--sans); padding: 6px 0;
+    transition: color var(--transition);
+    width: 100%;
+  }
+  .settings-link:hover { color: var(--ink-2); }
+
+  .email-address-box {
+    background: var(--paper-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-2);
+    word-break: break-all;
+    cursor: pointer;
+    transition: background var(--transition);
+    position: relative;
+  }
+  .email-address-box:hover { background: var(--paper-3); }
+  .email-address-box::after {
+    content: 'Click to copy';
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    font-size: 10px; color: var(--ink-3); font-family: var(--sans);
+  }
+
+  .setup-steps { list-style: none; counter-reset: steps; }
+  .setup-steps li {
+    counter-increment: steps;
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 13px; color: var(--ink-2); padding: 6px 0;
+    line-height: 1.5;
+  }
+  .setup-steps li::before {
+    content: counter(steps);
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--ink); color: var(--paper);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; flex-shrink: 0; margin-top: 1px;
+  }
+  .code-inline {
+    font-family: var(--mono); font-size: 12px;
+    background: var(--paper-3); padding: 1px 5px; border-radius: 4px;
+  }
 </style>
 </head>
 <body>
@@ -552,6 +620,12 @@
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Add Bookmark
     </button>
+    <div style="padding:0 12px 8px">
+      <button class="sync-pill" id="sync-pill" onclick="syncNow()" title="Sync with cloud">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <span id="sync-label">No sync</span>
+      </button>
+    </div>
 
     <div class="search-wrap">
       <div class="search-wrap-inner">
@@ -582,6 +656,17 @@
     <div class="nav-section" id="tags-nav">
       <div class="nav-label">Tags</div>
       <div class="tag-list" id="tag-nav-list"></div>
+    </div>
+
+    <div class="settings-section">
+      <button class="settings-link" onclick="openSettingsModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings &amp; Email Capture
+      </button>
+      <button class="settings-link" onclick="exportBookmarks()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export JSON
+      </button>
     </div>
   </aside>
 
@@ -654,9 +739,55 @@
 </div>
 </template>
 
+<!-- Settings Modal -->
+<template id="settings-tpl">
+<div class="modal-backdrop" id="modal-backdrop" onclick="handleBackdropClick(event)">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <span class="modal-title">Settings &amp; Email Capture</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Worker URL -->
+      <div>
+        <label class="field-label">Worker URL</label>
+        <input class="field-input" type="url" id="field-worker-url" placeholder="https://mark-bookmarks.YOUR-SUBDOMAIN.workers.dev">
+        <p style="font-size:12px;color:var(--ink-3);margin-top:5px">Paste your deployed Cloudflare Worker URL to enable cloud sync &amp; email capture.</p>
+      </div>
+
+      <!-- Email address (shown when worker URL set) -->
+      <div id="email-capture-section" style="display:none">
+        <label class="field-label">Your capture email address</label>
+        <div class="email-address-box" id="capture-email-display" onclick="copyEmailAddress()"></div>
+        <p style="font-size:12px;color:var(--ink-3);margin-top:5px">Forward any email (or send a URL) to this address — it will appear in Mark within seconds.</p>
+      </div>
+
+      <!-- Setup guide -->
+      <div style="border-top:1px solid var(--border);padding-top:16px">
+        <p style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:10px">One-time setup (free, ~5 min)</p>
+        <ol class="setup-steps">
+          <li>Install Wrangler: <span class="code-inline">npm i -g wrangler &amp;&amp; wrangler login</span></li>
+          <li>In the <span class="code-inline">worker/</span> folder, create KV store:<br><span class="code-inline">npx wrangler kv namespace create BOOKMARKS</span><br>Paste the <span class="code-inline">id</span> into <span class="code-inline">wrangler.toml</span></li>
+          <li>Deploy: <span class="code-inline">npx wrangler deploy</span> — copy the <span class="code-inline">.workers.dev</span> URL above</li>
+          <li>In Cloudflare dashboard → <strong>Email Routing</strong> → add a custom address → route to this Worker</li>
+          <li>Done! Forward any webpage link to your capture address to save it.</li>
+        </ol>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+</template>
+
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
-const STORAGE_KEY = 'mark_bookmarks_v1';
+const STORAGE_KEY    = 'mark_bookmarks_v1';
+const WORKER_URL_KEY = 'mark_worker_url';
 
 let state = {
   bookmarks: [],
@@ -910,6 +1041,7 @@ function markRead(id) {
 function deleteBookmark(id) {
   if (!confirm('Delete this bookmark?')) return;
   state.bookmarks = state.bookmarks.filter(x => x.id !== id);
+  deleteFromCloud(id);
   save(); render();
   toast('Bookmark deleted');
 }
@@ -997,13 +1129,18 @@ function saveBookmark() {
 
   if (state.editingId) {
     const b = state.bookmarks.find(x => x.id === state.editingId);
-    if (b) Object.assign(b, { url, title: title || getDomain(url), notes, tags: state.modalTags, starred, unread });
+    if (b) {
+      Object.assign(b, { url, title: title || getDomain(url), notes, tags: state.modalTags, starred, unread });
+      pushToCloud(b);
+    }
   } else {
-    state.bookmarks.unshift({
+    const bookmark = {
       id: uid(), url, title: title || getDomain(url), notes,
       tags: state.modalTags, starred, unread,
       createdAt: Date.now(),
-    });
+    };
+    state.bookmarks.unshift(bookmark);
+    pushToCloud(bookmark);
   }
 
   save(); closeModal(); render();
@@ -1055,6 +1192,123 @@ function checkUrlParams() {
   }
 }
 
+// ── Cloud Sync ─────────────────────────────────────────────────────────────
+function getWorkerUrl() {
+  return (localStorage.getItem(WORKER_URL_KEY) || '').replace(/\/$/, '');
+}
+
+function setSyncStatus(status, label) {
+  const pill = document.getElementById('sync-pill');
+  const lbl  = document.getElementById('sync-label');
+  if (!pill || !lbl) return;
+  pill.className = `sync-pill ${status}`;
+  lbl.textContent = label;
+}
+
+async function syncNow() {
+  const base = getWorkerUrl();
+  if (!base) { openSettingsModal(); return; }
+
+  setSyncStatus('syncing', 'Syncing…');
+  try {
+    const res = await fetch(`${base}/bookmarks`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const remote = await res.json();
+
+    // Merge: local wins on conflict (same id), new remote items are added
+    const localIds = new Set(state.bookmarks.map(b => b.id));
+    let added = 0;
+    for (const rb of remote) {
+      if (!localIds.has(rb.id)) {
+        state.bookmarks.push(rb);
+        added++;
+      }
+    }
+    if (added > 0) { save(); render(); }
+
+    const t = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    setSyncStatus('synced', `Synced ${t}`);
+    if (added > 0) toast(`${added} new bookmark${added > 1 ? 's' : ''} from cloud`);
+  } catch (err) {
+    setSyncStatus('error', 'Sync failed');
+    toast('Sync error — check Worker URL in Settings');
+    console.error('Mark sync error:', err);
+  }
+}
+
+/** Push a single bookmark up to the Worker */
+async function pushToCloud(bookmark) {
+  const base = getWorkerUrl();
+  if (!base) return;
+  try {
+    await fetch(`${base}/bookmarks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bookmark),
+    });
+  } catch (_) { /* non-blocking */ }
+}
+
+/** Delete a bookmark from the Worker */
+async function deleteFromCloud(id) {
+  const base = getWorkerUrl();
+  if (!base) return;
+  try { await fetch(`${base}/bookmarks/${id}`, { method: 'DELETE' }); } catch (_) {}
+}
+
+function updateSyncPill() {
+  const base = getWorkerUrl();
+  if (base) {
+    setSyncStatus('', 'Sync now');
+  } else {
+    setSyncStatus('', 'No sync');
+  }
+}
+
+// ── Settings Modal ─────────────────────────────────────────────────────────
+function openSettingsModal() {
+  const tpl = document.getElementById('settings-tpl').content.cloneNode(true);
+  document.body.appendChild(tpl);
+
+  const workerUrl = getWorkerUrl();
+  document.getElementById('field-worker-url').value = workerUrl;
+  updateEmailSection(workerUrl);
+}
+
+function updateEmailSection(workerUrl) {
+  const section = document.getElementById('email-capture-section');
+  const display = document.getElementById('capture-email-display');
+  if (!section || !display) return;
+  if (workerUrl) {
+    section.style.display = '';
+    // Capture email is typically the address configured in Cloudflare Email Routing
+    // We show a placeholder so the user knows where to look
+    display.textContent = 'mark-capture@yourdomain.com  (set in Cloudflare Email Routing)';
+    display.title = 'Configure this address in Cloudflare Dashboard → Email Routing';
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+function copyEmailAddress() {
+  const display = document.getElementById('capture-email-display');
+  if (!display) return;
+  navigator.clipboard.writeText(display.textContent).then(() => toast('Copied!'));
+}
+
+function saveSettings() {
+  const url = (document.getElementById('field-worker-url')?.value || '').trim();
+  if (url) {
+    localStorage.setItem(WORKER_URL_KEY, url);
+  } else {
+    localStorage.removeItem(WORKER_URL_KEY);
+  }
+  closeModal();
+  updateSyncPill();
+  if (url) syncNow();
+  toast('Settings saved');
+}
+
 // ── Import / Export ────────────────────────────────────────────────────────
 function exportBookmarks() {
   const blob = new Blob([JSON.stringify(state.bookmarks, null, 2)], { type: 'application/json' });
@@ -1067,6 +1321,7 @@ function exportBookmarks() {
 // ── Init ───────────────────────────────────────────────────────────────────
 load();
 checkUrlParams();
+updateSyncPill();
 
 // Seed demo data if empty
 if (state.bookmarks.length === 0) {
@@ -1082,6 +1337,9 @@ if (state.bookmarks.length === 0) {
 }
 
 render();
+
+// Auto-sync on load if worker is configured
+if (getWorkerUrl()) syncNow();
 </script>
 
 <!-- Service Worker registration for PWA -->
